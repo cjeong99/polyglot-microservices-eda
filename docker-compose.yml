@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: msa-postgres
+    environment:
+      POSTGRES_USER: msa
+      POSTGRES_PASSWORD: msa
+      POSTGRES_DB: msa_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ------------------------------
+  # Admin / Observability (PUBLIC)
+  # ------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: msa-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  # ------------------------------
+  # Redpanda (Kafka-compatible broker)
+  # ------------------------------
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: msa-redpanda
+    command: >
+      redpanda start
+      --overprovisioned
+      --smp 1
+      --memory 1G
+      --reserve-memory 0M
+      --node-id 0
+      --check=false
+      --set redpanda.auto_create_topics_enabled=true
+      --kafka-addr PLAINTEXT://0.0.0.0:9092
+      --advertise-kafka-addr PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+
+  # ------------------------------
+  # Redpanda Console (Web UI)
+  # ------------------------------
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: msa-redpanda-console
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      REDPANDA_ADMIN_API_URL: http://redpanda:9644
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redpanda
+
+  # ------------------------------
+  # Microservices (INTERNAL)
+  # ------------------------------
+
+  ride-service:
+    build:
+      context: ./services/ride-service
+    container_name: msa-ride-service
+    environment:
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: msa
+      DB_PASSWORD: msa
+      DB_NAME: msa_db
+      KAFKA_BROKER: redpanda:9092
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redpanda
+
+
+
+
+volumes:
+  pgdata:
+
