@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# env files
+.env
+*.env
+**/.env
+
+# Node
+node_modules
+**/node_modules
+
+# Python
+__pycache__
+*.pyc
+
+# Logs
+*.log
+
+# .NET
+bin
+obj
+
+# Build outputs
+dist
+build
+coverage
+
+# pnpm
+.pnpm-store
+
+
