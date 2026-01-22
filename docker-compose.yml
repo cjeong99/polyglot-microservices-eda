@@ -81,6 +81,17 @@ services:
       - postgres
       - redpanda
 
+  vehicle-service:
+    build:
+      context: ./services/vehicle-service/VehicleService
+    container_name: msa-vehicle-service
+    environment:
+      KAFKA_BROKER: redpanda:9092
+      KAFKA_GROUP_ID: vehicle-service-group
+      TOPIC_RIDE_REQUESTED: ride.requested
+      TOPIC_VEHICLE_ASSIGNED: vehicle.assigned
+    depends_on:
+      - redpanda
 
 
 
