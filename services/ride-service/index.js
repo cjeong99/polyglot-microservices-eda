@@ -12,9 +12,9 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const DB_HOST = process.env.DB_HOST || "localhost";
 const DB_PORT = process.env.DB_PORT || 5432;
-const DB_USER = process.env.DB_USER || "msa";
-const DB_PASSWORD = process.env.DB_PASSWORD || "msa";
-const DB_NAME = process.env.DB_NAME || "msa_db";
+const DB_USER = process.env.DB_USER || "ridedb";
+const DB_PASSWORD = process.env.DB_PASSWORD || "ridedb";
+const DB_NAME = process.env.DB_NAME || "ridedb";
 
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "localhost:9092";
 console.log("Using Kafka broker:", KAFKA_BROKER);

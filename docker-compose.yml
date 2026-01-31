@@ -1,15 +1,31 @@
 services:
-  postgres:
+  # ------------------------------
+  # PostgreSQL (INTERNAL)
+  # ------------------------------
+  postgres-ride-service:
     image: postgres:16
-    container_name: msa-postgres
+    container_name: msa-postgres-ride
     environment:
-      POSTGRES_USER: msa
-      POSTGRES_PASSWORD: msa
-      POSTGRES_DB: msa_db
+      POSTGRES_USER: ridedb
+      POSTGRES_PASSWORD: ridedb
+      POSTGRES_DB: ridedb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  postgres-user-service:
+    image: postgres:16
+    container_name: msa-postgres-user
+    environment:
+      POSTGRES_USER: userdb
+      POSTGRES_PASSWORD: userdb
+      POSTGRES_DB: userdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - userdb-data:/var/lib/postgresql/data
+
 
   # ------------------------------
   # Admin / Observability (PUBLIC)
@@ -23,7 +39,8 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres
+      - postgres-ride-service
+      - postgres-user-service
 
   # ------------------------------
   # Redpanda (Kafka-compatible broker)
@@ -69,16 +86,16 @@ services:
     container_name: msa-ride-service
     environment:
       PORT: 3000
-      DB_HOST: postgres
+      DB_HOST: postgres-ride-service
       DB_PORT: 5432
-      DB_USER: msa
-      DB_PASSWORD: msa
-      DB_NAME: msa_db
+      DB_USER: ridedb
+      DB_PASSWORD: ridedb
+      DB_NAME: ridedb
       KAFKA_BROKER: redpanda:9092
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
+      - postgres-ride-service
       - redpanda
 
   vehicle-service:
@@ -93,8 +110,31 @@ services:
     depends_on:
       - redpanda
 
+  user-service:
+    build:
+      context: ./services/user-service
+    container_name: msa-user-service
+    ports:
+      - "8001:8000"
+    environment:
+      DB_HOST: postgres-user-service
+      DB_PORT: 5432
+      DB_USER: userdb
+      DB_PASSWORD: userdb
+      DB_NAME: userdb
+    depends_on:
+      - postgres-user-service
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: msa-notification-service
+    environment:
+      KAFKA_BROKER: redpanda:9092
+    depends_on:
+      - redpanda
 
 
 volumes:
   pgdata:
-
+  userdb-data:
