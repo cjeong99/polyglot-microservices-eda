@@ -1,0 +1,16 @@
+_format_version: "3.0"
+
+services:
+  - name: ride-service
+    url: http://ride-service:3000
+    routes:
+      - name: ride-api
+        paths:
+          - /rides
+
+  - name: user-service
+    url: http://user-service:8000
+    routes:
+      - name: user-api
+        paths:
+          - /users

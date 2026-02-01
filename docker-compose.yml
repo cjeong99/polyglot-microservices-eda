@@ -1,9 +1,35 @@
 services:
   # ------------------------------
+  # API Gateway (PUBLIC)
+  # ------------------------------
+  kong:
+    build: ./gateway
+    networks: [app-net]
+    container_name: msa-kong
+    restart: always
+
+
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+
+    ports:
+      - "1212:8000"
+      - "1213:8001"
+
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  # ------------------------------
   # PostgreSQL (INTERNAL)
   # ------------------------------
   postgres-ride-service:
     image: postgres:16
+    networks: [app-net]
     container_name: msa-postgres-ride
     environment:
       POSTGRES_USER: ridedb
@@ -16,6 +42,7 @@ services:
 
   postgres-user-service:
     image: postgres:16
+    networks: [app-net]
     container_name: msa-postgres-user
     environment:
       POSTGRES_USER: userdb
@@ -83,6 +110,7 @@ services:
   ride-service:
     build:
       context: ./services/ride-service
+    networks: [app-net]
     container_name: msa-ride-service
     environment:
       PORT: 3000
@@ -101,6 +129,7 @@ services:
   vehicle-service:
     build:
       context: ./services/vehicle-service/VehicleService
+    networks: [app-net]
     container_name: msa-vehicle-service
     environment:
       KAFKA_BROKER: redpanda:9092
@@ -113,6 +142,7 @@ services:
   user-service:
     build:
       context: ./services/user-service
+    networks: [app-net]
     container_name: msa-user-service
     ports:
       - "8001:8000"
@@ -128,6 +158,7 @@ services:
   notification-service:
     build:
       context: ./services/notification-service
+    networks: [app-net]
     container_name: msa-notification-service
     environment:
       KAFKA_BROKER: redpanda:9092
@@ -138,3 +169,7 @@ services:
 volumes:
   pgdata:
   userdb-data:
+
+
+networks:
+  app-net:
