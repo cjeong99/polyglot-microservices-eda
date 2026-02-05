@@ -1,0 +1,44 @@
+_format_version: "3.0"
+
+services:
+  - name: ride-service
+    url: http://ride-service:3000
+    routes:
+      - name: ride-api
+        paths:
+          - /rides
+
+  - name: user-service
+    url: http://user-service:8000
+    routes:
+      - name: user-api
+        paths:
+          - /users
+
+
+plugins:
+  - name: jwt
+    config:
+      uri_param_names: ["jwt"]
+      claims_to_verify: ["exp"]
+      key_claim_name: iss
+
+  - name: rate-limiting
+    config:
+      minute: 10
+      hour: 500
+      policy: local
+      limit_by: ip
+
+
+consumers:
+  - username: auth0-issuer
+    jwt_secrets:
+      - # This KEY must EXACTLY match the 'iss' value in your token payload
+        key: "https://dev-fif0ucekwcnt6ygy.us.auth0.com/"
+        algorithm: RS256
+        # --- ADDED THIS DUMMY SECRET FIELD ---
+        secret: "dummy-value-required-by-schema" 
+        # Public key extracted from Auth0 certificate:
+        # curl -s https://{YOUR-TENANT}.auth0.com/pem | openssl x509 -pubkey -noout
+        rsa_public_key: ${AUTH0_RSA_PUBLIC_KEY}
