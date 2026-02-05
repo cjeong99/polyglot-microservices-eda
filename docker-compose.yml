@@ -19,6 +19,9 @@ services:
       - "1212:8000"
       - "1213:8001"
 
+    volumes:
+      - ./gateway/kong.yml:/etc/kong/kong.yml:ro
+
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s
@@ -39,6 +42,11 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ridedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-user-service:
     image: postgres:16
@@ -59,6 +67,7 @@ services:
   # ------------------------------
   pgadmin:
     image: dpage/pgadmin4:latest
+    networks: [app-net]
     container_name: msa-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@local.com
@@ -74,6 +83,7 @@ services:
   # ------------------------------
   redpanda:
     image: redpandadata/redpanda:latest
+    networks: [app-net]
     container_name: msa-redpanda
     command: >
       redpanda start
@@ -94,6 +104,7 @@ services:
   # ------------------------------
   redpanda-console:
     image: redpandadata/console:latest
+    networks: [app-net]
     container_name: msa-redpanda-console
     environment:
       KAFKA_BROKERS: redpanda:9092
@@ -112,19 +123,15 @@ services:
       context: ./services/ride-service
     networks: [app-net]
     container_name: msa-ride-service
-    environment:
-      PORT: 3000
-      DB_HOST: postgres-ride-service
-      DB_PORT: 5432
-      DB_USER: ridedb
-      DB_PASSWORD: ridedb
-      DB_NAME: ridedb
-      KAFKA_BROKER: redpanda:9092
+    env_file:
+      - ./services/ride-service/.env
     ports:
       - "3000:3000"
     depends_on:
-      - postgres-ride-service
-      - redpanda
+      postgres-ride-service:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
 
   vehicle-service:
     build:
